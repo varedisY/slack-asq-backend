@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 import gpt
 import llama
 import qdrant
@@ -6,47 +6,66 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 
-
 @router.post("/slack/events")
 async def slack_events(request: Request):
-    data = await request.json()
-    if 'challenge' in data:
-        return data['challenge']
-    
-    if 'event' in data:
-        event = data['event']
-        # Check if the message is a direct message and not sent by a bot
-        if (
-            event.get('type') == 'message' and 
-            event.get('channel_type') == 'im' and 
-            'subtype' not in event and 
-            'bot_id' not in event  # Ignore bot messages
-        ):
-            channel = event['channel']
-            text = event['text']
-            try:
-                # Send "Thinking..." message
-                thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
-                #TODO: UPDATE collectionNAME
-                search_results = qdrant.find(text, "docs")
+    try:
+        data = await request.json()
+        logging.info("Received request: %s", data)
 
-                context = "\n".join(map(lambda result: result.payload["document"], search_results))
-                
-                ai_response = gpt.generate_response(text, context)
+        if 'challenge' in data:
+            return data['challenge']
 
-                # Update the "Thinking..." message with the AI response
-                client.chat_update(
-                    channel=channel,
-                    ts=thinking_message['ts'],
-                    text=ai_response.choices[0].message.content
-                )
-            except SlackApiError as e:
-                print(f"Error posting message: {e.response['error']}")
-    
+        if 'event' in data:
+            event = data['event']
+            # Check if the message is a direct message and not sent by a bot
+            if (
+                event.get('type') == 'message' and
+                event.get('channel_type') == 'im' and
+                'subtype' not in event and
+                'bot_id' not in event  # Ignore bot messages
+            ):
+                channel = event['channel']
+                text = event['text']
+
+                try:
+                    # Send "Thinking..." message
+                    thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
+                    logging.info("Posted 'Thinking...' message: %s", thinking_message)
+
+                    # Perform the search
+                    # TODO: Update collection name as needed
+                    search_results = qdrant.find(text, "docs")
+                    context = "\n".join(result.payload["document"] for result in search_results)
+
+                    # Generate the AI response
+                    ai_response = gpt.generate_response(text, context)
+
+                    # Ensure the response structure is as expected
+                    response_text = ai_response.choices[0].message.content if ai_response.choices else "I'm not sure how to respond to that."
+
+                    # Update the "Thinking..." message with the AI response
+                    client.chat_update(
+                        channel=channel,
+                        ts=thinking_message['ts'],
+                        text=response_text
+                    )
+                except SlackApiError as e:
+                    logging.error("Error posting or updating message: %s", e.response['error'])
+                except KeyError as e:
+                    logging.error("Unexpected response structure: %s", e)
+                    raise HTTPException(status_code=500, detail="AI response format error")
+    except Exception as e:
+        logging.error("Error processing Slack event: %s", str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
+
     return {"status": "ok"}
