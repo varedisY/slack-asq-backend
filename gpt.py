@@ -10,20 +10,21 @@ ANSWER_SYSTEM_PROMPT = "You are an assistant for the administration of 'INFOTECH
 
 
 
-def generateResponse(query):
+def generateResponse(query,context):
     chat_completion_stream = client.chat.completions.create(
     messages=[
-        {
-            "role": "system",
-            "content": "You are a teacher that answers questions based only on the provided fragments from the books. Before the answer, show the fragments that you are using. Respond in Polish."
-        },
+      
         {
             "role": "system",
             "content": "You are an assistant for the administration of 'INFOTECH' high school. Your task is to summarize and answer questions strictly and only based on the provided context. Respond in Polish."
         },
         {
+            "role": "system",
+            "content": "Here's the provided context: " + context
+        },
+        {
             "role": "user",
-            "content": "Jakie są godziny pracy sekretariatu szkoły INFOTECH?"
+            "content": query
         }
     ],
     model="gpt-4",
