@@ -41,31 +41,31 @@ def ask(query: str,collectionName:str):
 
 
 
-# @app.post("/embed")
-# async def embed_files(    uploadedFiles: List[UploadFile] = File(...),  # list of uploaded files
-#     collectionName: str = Form(...) ):
-#     success_count = 0 
+@app.post("/embed")
+async def embed_files(    uploadedFiles: List[UploadFile] = File(...),  # list of uploaded files
+    collectionName: str = Form(...) ):
+    success_count = 0 
 
-#     for uploadedFile in uploadedFiles:
-#         content = await uploadedFile.read()
-#         file_extension = os.path.splitext(uploadedFile.filename)[1].lower()
+    for uploadedFile in uploadedFiles:
+        content = await uploadedFile.read()
+        file_extension = os.path.splitext(uploadedFile.filename)[1].lower()
 
-#         if file_extension == ".txt":
-#             text_content = content.decode("utf-8")
-#         elif file_extension == ".pdf":
-#             text_content = file.extract_text_from_pdf(content)
-#         else:
-#             return {"error": f"Unsupported file type for {uploadedFile.filename}"}
+        if file_extension == ".txt":
+            text_content = content.decode("utf-8")
+        elif file_extension == ".pdf":
+            text_content = file.extract_text_from_pdf(content)
+        else:
+            return {"error": f"Unsupported file type for {uploadedFile.filename}"}
 
-#         paragraphs = chunker.semanticSplit(text_content)
+        paragraphs = chunker.semanticSplit(text_content)
 
-#         try:
-#             qdrant.index_paragraphs(paragraphs,collectionName)
-#             success_count += 1  
-#         except Exception as e:
-#             print(f"Error indexing file {uploadedFile.filename}: {e}")
+        try:
+            qdrant.index_paragraphs(paragraphs,collectionName)
+            success_count += 1  
+        except Exception as e:
+            print(f"Error indexing file {uploadedFile.filename}: {e}")
 
-#     return {"success": True, "files_processed": success_count}
+    return {"success": True, "files_processed": success_count}
 
 
 
