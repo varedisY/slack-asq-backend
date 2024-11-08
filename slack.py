@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+import gpt
 import llama
 import qdrant
 from slack_sdk import WebClient
@@ -32,18 +33,18 @@ async def slack_events(request: Request):
             try:
                 # Send "Thinking..." message
                 thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
-                
+                #TODO: UPDATE collectionNAME
                 search_results = qdrant.find(text, "docs")
 
                 context = "\n".join(map(lambda result: result.payload["document"], search_results))
                 
-                ai_response = llama.generate_response(context, text)
+                ai_response = gpt.generate_response(text, context)
 
                 # Update the "Thinking..." message with the AI response
                 client.chat_update(
                     channel=channel,
                     ts=thinking_message['ts'],
-                    text=ai_response['message']['content']
+                    text=ai_response.choices[0].message.content
                 )
             except SlackApiError as e:
                 print(f"Error posting message: {e.response['error']}")

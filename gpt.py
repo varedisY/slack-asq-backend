@@ -10,7 +10,7 @@ ANSWER_SYSTEM_PROMPT = "You are an assistant for the administration of 'INFOTECH
 
 
 
-def generateResponse(query,context):
+def generate_response(query,context,is_stream=False):
     chat_completion_stream = client.chat.completions.create(
     messages=[
       
@@ -28,7 +28,7 @@ def generateResponse(query,context):
         }
     ],
     model="gpt-4",
-    stream=True
+    stream=is_stream
 )
 
 
