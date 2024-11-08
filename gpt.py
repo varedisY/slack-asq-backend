@@ -1,8 +1,12 @@
 import os
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
+    api_key=os.getenv("OPENAI_API_KEY"),
 )
 
 LESSONS_SYSTEM_PROMPT="You are a teacher that answers questions based only on the provided fragments from the books. Before the anwser show the fragments that you are using .Respond in Polish."
