@@ -5,7 +5,7 @@ from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 import uuid
 import chunker
 
-client = QdrantClient(url="http://localhost:6333", port=8011)  
+client = QdrantClient(url="http://localhost:6333")  
 
 
 def index_paragraphs(paragraphs,collectionName):
