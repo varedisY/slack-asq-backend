@@ -66,9 +66,9 @@ async def slack_events(request: Request,response:Response):
                     logging.error("Error posting or updating message: %s", e.response['error'])
                 except KeyError as e:
                     logging.error("Unexpected response structure: %s", e)
-                    raise HTTPException(status_code=500, detail="AI response format error")
+                    raise HTTPException(status_code=500, detail="AI response format error", headers={"x-slack-no-retry": "1"})
     except Exception as e:
         logging.error("Error processing Slack event: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error", headers={"x-slack-no-retry": "1"},)
 
     return {"status": "ok"}
