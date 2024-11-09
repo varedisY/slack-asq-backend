@@ -1,6 +1,6 @@
 from fastapi.responses import StreamingResponse
 from typing import AsyncGenerator, List
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form,Request
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import slack
@@ -12,6 +12,12 @@ import llama
 import gpt
 
 app = FastAPI()
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["x-slack-no-retry"] = "1"
+    return response
 
 
 
