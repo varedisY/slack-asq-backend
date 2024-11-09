@@ -20,7 +20,7 @@ router
 
 @router.post("/slack/events")
 async def slack_events(request: Request,response:Response):
-    response.headers["x-slack-no-retry"] = 1
+    response.headers["x-slack-no-retry"] = "1"
     try:
         data = await request.json()
         logging.info("Received request: %s", data)
