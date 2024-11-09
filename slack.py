@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException,Response
 import gpt
 import llama
 import qdrant
@@ -16,8 +16,11 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 
+router
+
 @router.post("/slack/events")
-async def slack_events(request: Request):
+async def slack_events(request: Request,response:Response):
+    response.headers["x-slack-no-retry"] = 1
     try:
         data = await request.json()
         logging.info("Received request: %s", data)
