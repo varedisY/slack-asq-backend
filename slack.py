@@ -22,7 +22,6 @@ router
 async def slack_events(request: Request,response:Response):
     try:
         data = await request.json()
-        logging.info("Received request: %s", data)
 
         if 'challenge' in data:
             return data['challenge']
@@ -40,6 +39,11 @@ async def slack_events(request: Request,response:Response):
                 text = event['text']
 
                 try:
+
+                    logging.info("Responding TO: %s", text)
+
+                    
+
                     # Send "Thinking..." message
                     thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
                     logging.info("Posted 'Thinking...' message: %s", thinking_message)
