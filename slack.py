@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, HTTPException, Response
+from fastapi import BackgroundTasks, FastAPI
 import gpt
 import llama
 import qdrant
@@ -18,12 +19,10 @@ router = APIRouter()
 client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 
 @router.post("/slack/events")
-async def slack_events(request: Request, response: Response):
+async def slack_events(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
 
-        # Add the header to indicate Slack not to retry
-        response.headers['X-Slack-No-Retry'] = '1'
 
         if 'challenge' in data:
             return data['challenge']
@@ -40,10 +39,7 @@ async def slack_events(request: Request, response: Response):
             ):
                 channel = event['channel']
                 text = event['text']
-
-                # Schedule the event processing and return immediately
-                asyncio.create_task(process_slack_event(channel, text))
-                return {"status": "ok"}  # Respond to Slack immediately
+                background_tasks.add_task(process_slack_event(channel,text))
 
     except Exception as e:
         logging.error("Error processing Slack event: %s", str(e))
