@@ -21,7 +21,6 @@ client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 async def slack_events(request: Request, response: Response):
     try:
         data = await request.json()
-        logging.info("Received request: %s", data)
 
         # Add the header to indicate Slack not to retry
         response.headers['X-Slack-No-Retry'] = '1'
