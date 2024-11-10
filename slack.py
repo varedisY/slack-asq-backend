@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 
-
 @router.post("/slack/events")
 async def slack_events(request: Request, response: Response):
     try:
@@ -42,15 +41,15 @@ async def slack_events(request: Request, response: Response):
                 channel = event['channel']
                 text = event['text']
 
-                # Respond early to prevent Slack retries
+                # Schedule the event processing and return immediately
                 asyncio.create_task(process_slack_event(channel, text))
+                return {"status": "ok"}  # Respond to Slack immediately
 
     except Exception as e:
         logging.error("Error processing Slack event: %s", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
 
-    return {"status": "ok"}
-
+    return {"status": "ok"}  # Ensure a response is sent even if conditions aren't met
 
 async def process_slack_event(channel: str, text: str):
     try:
@@ -79,4 +78,4 @@ async def process_slack_event(channel: str, text: str):
         logging.error("Error posting or updating message: %s", e.response['error'])
     except KeyError as e:
         logging.error("Unexpected response structure: %s", e)
-        raise HTTPException(status_code=500, detail="AI response format error")
+        # Log the exception but do not raise HTTPException in the background task
