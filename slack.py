@@ -16,19 +16,27 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 
-router
 
 @router.post("/slack/events")
-async def slack_events(request: Request,response:Response):
+async def slack_events(request: Request, response: Response):
     try:
         data = await request.json()
+        logging.info("Received request: %s", data)
+
+        # Add the header to indicate Slack not to retry
+        response.headers['X-Slack-No-Retry'] = '1'
 
         if 'challenge' in data:
             return data['challenge']
 
         if 'event' in data:
             event = data['event']
-            # Check if the message is a direct message and not sent by a bot
+            # Ignoring message edit events
+            if event.get('subtype') == 'message_changed':
+                logging.info("Ignoring message edit event")
+                return {"status": "ignored"}
+
+            # Check if the message is a direct message, not sent by a bot, and not an edit event
             if (
                 event.get('type') == 'message' and
                 event.get('channel_type') == 'im' and
@@ -39,13 +47,13 @@ async def slack_events(request: Request,response:Response):
                 text = event['text']
 
                 try:
-
-                    logging.info("Responding TO: %s", text)
-
+                    # Respond early to prevent Slack retries
+                    response.status_code = 200
+                    response.body = '{"status": "processing"}'
                     
-
                     # Send "Thinking..." message
                     thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
+                    logging.info("Posted 'Thinking...' message: %s", thinking_message)
 
                     # Perform the search
                     # TODO: Update collection name as needed
@@ -68,9 +76,10 @@ async def slack_events(request: Request,response:Response):
                     logging.error("Error posting or updating message: %s", e.response['error'])
                 except KeyError as e:
                     logging.error("Unexpected response structure: %s", e)
-                    raise HTTPException(status_code=500, detail="AI response format error",)
+                    raise HTTPException(status_code=500, detail="AI response format error")
     except Exception as e:
         logging.error("Error processing Slack event: %s", str(e))
-        raise HTTPException(status_code=500, detail="Internal server error",)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
     return {"status": "ok"}
+
