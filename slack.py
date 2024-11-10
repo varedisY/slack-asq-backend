@@ -46,7 +46,6 @@ async def slack_events(request: Request,response:Response):
 
                     # Send "Thinking..." message
                     thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
-                    logging.info("Posted 'Thinking...' message: %s", thinking_message)
 
                     # Perform the search
                     # TODO: Update collection name as needed
