@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Response
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import APIRouter, Request, HTTPException, Response, BackgroundTasks
 import gpt
 import llama
 import qdrant
@@ -8,7 +7,6 @@ from slack_sdk.errors import SlackApiError
 import os
 from dotenv import load_dotenv
 import logging
-import asyncio
 
 load_dotenv()
 
@@ -22,7 +20,6 @@ client = WebClient(token=os.getenv('SLACK_BOT_TOKEN'))
 async def slack_events(request: Request, background_tasks: BackgroundTasks):
     try:
         data = await request.json()
-
 
         if 'challenge' in data:
             return data['challenge']
@@ -39,7 +36,8 @@ async def slack_events(request: Request, background_tasks: BackgroundTasks):
             ):
                 channel = event['channel']
                 text = event['text']
-                background_tasks.add_task(process_slack_event(channel,text))
+                # Add the task to the background execution queue
+                background_tasks.add_task(process_slack_event, channel, text)
 
     except Exception as e:
         logging.error("Error processing Slack event: %s", str(e))
@@ -47,7 +45,7 @@ async def slack_events(request: Request, background_tasks: BackgroundTasks):
 
     return {"status": "ok"}  # Ensure a response is sent even if conditions aren't met
 
-async def process_slack_event(channel: str, text: str):
+def process_slack_event(channel: str, text: str):
     try:
         # Send "Thinking..." message
         thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
