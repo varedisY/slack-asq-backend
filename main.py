@@ -40,7 +40,7 @@ def ask(query: str,collectionName:str):
     context = "\n".join(map(lambda result: result.payload["document"], search_results))
 
     async def response_stream() -> AsyncGenerator[str, None]:
-        stream = gpt.generateResponse(query,context,True)
+        stream = gpt.generate_response(query,context,True)
         for chunk in stream:
             yield chunk.choices[0].delta.content or ""
     return StreamingResponse(response_stream(), media_type="text/plain")
